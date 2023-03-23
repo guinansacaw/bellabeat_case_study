@@ -1,3 +1,4 @@
+(bellabeat_v2.png)
 # Bellabeat Case Study
 
 Final case study for obtaining the Google Data Analytics Certification, based on the 6-step framework from Google for data analytics: 
