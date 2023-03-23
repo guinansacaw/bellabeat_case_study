@@ -1,0 +1,404 @@
+---
+title: "Bellabeat Case Study"
+author: "William Guiñansaca"
+date: "2023-03-02"
+output:
+  github_document
+---
+
+![](images/bellabeat_v2.png)
+
+# Bellabeat 
+
+## About the company
+
+Bellabeat is a high-tech manufacturer of health-focused products for women. The aim is to unlock new growth opportunities for the company by focusing on one of Bellabeat’s products and analyzing smart device data to gain insights into how consumers are using their devices.
+
+## Characters and products
+
+* Characters
+  + Urška Sršen: Bellabeat’s cofounder and Chief Creative Officer
+  + Sando Mur: Mathematician and Bellabeat’s cofounder; key member of the Bellabeat executive team
+  + Bellabeat marketing analytics team
+* Products
+  + Bellabeat app: The Bellabeat app provides users with health data related to their activity, sleep, stress, menstrual cycle, and mindfulness habits. The Bellabeat app connects to their line of smart wellness products.
+  + Leaf: Bellabeat’s classic wellness tracker can be worn as a bracelet, necklace, or clip. The Leaf tracker connects to the Bellabeat app to track activity, sleep, and stress.
+  + Time: This wellness watch combines the timeless look of a classic timepiece with smart technology to track user activity, sleep, and stress. The Time watch connects to the Bellabeat app to provide you with insights into your daily wellness.
+  + Spring: This is a water bottle that tracks daily water intake using smart technology to ensure that you are appropriately hydrated throughout the day. The Spring bottle connects to the Bellabeat app to track your hydration levels.
+  + Bellabeat membership: Bellabeat also offers a subscription-based membership program for users.Membership gives users 24/7 access to fully personalized guidance on nutrition, activity, sleep, health and beauty, and mindfulness based on their lifestyle and goals.
+  
+# Ask
+
+This phase clearly defines the goal of this analysis, which is to focus on a Bellabeat product and analyze smart device usage data to gain insights into how people are already using their smart devices. 
+
+# Prepare 
+
+The data used for this analysis is from FitBit Fitness Tracker Data. This Kaggle data set contains personal fitness tracker data from thirty Fitbit users. Thirty eligible Fitbit users consented to the submission of personal tracker data, including minute-level output for physical activity, heart rate, and sleep monitoring. It includes information about daily activity, steps, and heart rate that can be used to explore users’ habits.
+
+The data source: [FitBit Fitness Tracker Data](https://www.kaggle.com/datasets/arashnic/fitbit)
+
+Dataset made available through: [Mobius](https://www.kaggle.com/arashnic)
+
+## Identify how data is organized.
+
+The data contains files at different levels of granularity, such as days, hours, and minutes. But each of these files contains the same variables: calories, intensities, and steps. Additionally, there are three more files that show the user's heart rate, sleep duration, and weight log.
+
+* The calories file contains information about the number of calories burned by the user on a specific date.
+* The intensities file contains information about physical activity in terms of distance and minutes spent in four different intensity levels: sedentary, lightly active, fairly active, and very active.
+* The steps file contains information about the number of steps taken by a user in a day.
+* The heart rate file contains information about the user's heart rate.
+* The sleep file shows the number of minutes a user sleeps in a day.
+* The weight log file contains information about the user's weight.
+
+**The files containing the data related to daily steps, intensity, and calories have already been merged into one file called "daily activity". Therefore, the analysis will use only the daily activity file.**
+
+## Determine the credibility of the data.
+
+The analysis uses public data; therefore, considering this fact the data is:
+
+* Reliability : LOW – dataset was collected from 33 individuals whose gender is unknown.
+* Originality : LOW – third party data collect using Amazon Mechanical Turk.
+* Comprehensive : MEDIUM – dataset contains multiple fields on daily activity intensity, calories, daily steps taken, daily sleep time and weight record.
+* Current : MEDIUM – data is 7 years old 
+* Cited : HIGH – data collector and source is well documented
+
+
+# Process
+
+The selected tool for this analysis is RStudio. Prior to conducting the analysis, the data will be cleaned, organized, and transformed.
+
+## Load libraries and data.
+
+```{r message=FALSE}
+# Load-packages
+library("tidyverse")
+library("modeest")
+library("cowplot")
+```
+
+
+```{r message=FALSE}
+# Import data
+d_activity <- read_csv("raw_data/dailyActivity_merged_v1.csv")
+heart_rate <- read_csv("raw_data/heartrate_seconds_merged.csv")
+d_sleep <- read_csv("raw_data/sleepDay_merged.csv")
+weight <- read_csv("raw_data/weightLogInfo_merged.csv")
+```
+
+## Knowing the Data
+
+```{r message=FALSE}
+# To know the structure
+str(d_activity)
+str(heart_rate)
+str(d_sleep)
+str(weight)
+```
+
+## Cleaning Data
+
+It can be observed that there are some problems with the "date" column in every dataframe, so a data type change is required. Additionally, columns with wrong dates will be deleted.
+
+```{r}
+d_activity <- d_activity %>% # Add a date column to daily activities
+  mutate(date = as.POSIXct(ActivityDate, format = "%m/%d/%Y")) %>% 
+  select(-ActivityDate, -ActivityDate_v1)
+
+d_sleep <- d_sleep %>% # Add a date column to daily sleep
+  mutate(date = as.POSIXct(SleepDay, format = "%m/%d/%Y %I:%M:%S %p")) %>% 
+  select(-SleepDay)
+
+heart_rate <- heart_rate %>% # Add a date column to heart rate
+  mutate(date = as.POSIXct(Time, format = "%m/%d/%Y %I:%M:%S %p")) %>% 
+  select(-Time)
+
+weight <- weight %>% # Add a date column to weight
+  mutate(date = as.POSIXct(Date, format = "%m/%d/%Y %I:%M:%S %p")) %>% 
+  select(-Date)
+```
+
+The column names were in upper case, so they were transformed to lower case.
+
+```{r}
+# Rename the column names to lowercase
+d_activity <- rename_with(d_activity, tolower)
+d_sleep <- rename_with(d_sleep, tolower)
+heart_rate <- rename_with(heart_rate, tolower)
+weight <- rename_with(weight, tolower)
+```
+
+The data frames are checked for any missing values.
+
+```{r}
+# Checking Missing data
+sum(is.na(d_activity))
+sum(is.na(d_sleep))
+sum(is.na(heart_rate))
+sum(is.na(weight))
+```
+
+```{r}
+# Cheking for white spaces
+sum(grepl("^\\s*$", d_activity))
+sum(grepl("^\\s*$", d_sleep))
+sum(grepl("^\\s*$", heart_rate))
+sum(grepl("^\\s*$", weight))
+```
+
+There are 65 null values in the weight file, which correspond to the "fat" column, and there are no white spaces. It is necessary to determine how many id's there are in every file.
+
+```{r}
+# How many unique IDs are there?
+length(unique(d_activity$id))
+length(unique(d_sleep$id))
+length(unique(heart_rate$id))
+length(unique(weight$id))
+```
+
+Activity file has 33 ID numbers, and there are no negative or missing values in the data frames. However, files such as sleep, heart rate, and weight do not have the same number of IDs. The heart rate and weight files only contain information about sixteen and eight IDs, respectively, which is not enough to draw any conclusions. There are no categorical variables. All date columns are in the correct data type.Therefore, the weight and heart rate files won't be used for the analysis.
+
+## Transform the Data
+
+A column with the days was added to the activity file.
+
+```{r}
+# Add a column with days from the date in the activity file 
+
+d_activity <- d_activity %>% 
+  mutate(day_of_week = weekdays(date))
+```
+
+A column with the days was added to the sleep file.
+
+```{r}
+# Add a column with days from the date in the sleep file 
+
+d_sleep <- d_sleep %>% 
+  mutate(day_of_week = weekdays(date))
+```
+
+A categorized column is added to determine the quality of sleep.
+
+```{r}
+d_sleep <- d_sleep %>% 
+  mutate(type = case_when(
+    totalminutesasleep < 300 ~ "unhealthy sleep",
+    totalminutesasleep >= 300 & totalminutesasleep <= 420 ~ "average sleep",
+    totalminutesasleep > 420 ~ "healthy sleep"
+  ))
+```
+
+A categorized column is added to determine daily steps.
+
+```{r}
+d_activity <- d_activity %>% 
+  mutate(type = case_when(
+    totalsteps < 5000 ~ "Sedentary",
+    totalsteps >= 5000 & totalsteps < 8000 ~ "Fairly Active",
+    totalsteps >= 8000 & totalsteps < 12000 ~ "Active",
+    totalsteps > 12000 ~ "Highly Active"
+  ))
+```
+
+
+# Analyze
+
+## Descriptive analysis
+
+Let’s get a general overview of the data and identify any patterns or trends in the data frames.
+
+```{r}
+# To know the data
+summary(d_activity)
+summary(d_sleep)
+```
+
+## Identify trends and relationships
+
+According to the descriptive analysis the data has these trends:
+
+* The average number of steps for all users is 7638.
+* The average number of calories burned is 2304.
+* The average amount of time spent in intense physical activity is 21 minutes.
+* The average amount of time spent in a sedentary state is 991 minutes, which is equivalent to 16 hours and 31 minutes.
+* The average amount of sleep time is 419 minutes, which is equivalent to 6 hours and 59 minutes. 
+
+> According to the World Health Organization (WHO), it is recommended that adults engage in at least 150 minutes of moderate physical activity or 75 minutes of vigorous physical activity per week. This is equivalent to an average of 10,000 steps per day. According to estimations, a person can be considered sedentary when they burn around 1600-2000 calories per day, while a person who exercises regularly can burn between 3000-3500 calories per day. 
+
+It is necessary to consider the sample size and selection when interpreting the data. The data is based on a sample of 33 individuals, which may introduce bias into the analysis. Additionally, there are limitations to the analysis due to a lack of information about how the sample was obtained. 
+
+Therefore, it can be concluded that the 33 individuals may lead a sedentary lifestyle, and they probably work in an office for 8 hours a day. However, it should be noted that they also sleep for 7 hours a day.
+
+# Share
+
+Create effective data visualizations
+
+## Daily steps
+
+```{r}
+# Distance vs daily steps graph
+p1 <- ggplot(d_activity, aes(totalsteps, totaldistance)) + geom_point() + geom_smooth(method = "lm") + labs(x = "Daily Steps", y = "Distance", title = "Distance vs Daily steps") + theme_minimal()
+
+# Calories vs daily steps graph
+p2 <- ggplot(d_activity, aes(totalsteps, calories)) + geom_point() + geom_smooth(method = "lm") + labs(x = "Daily Steps", y = "Calories", title = "Calories vs Daily steps") + theme_minimal()
+
+plot_grid(p1, p2, ncol = 2) 
+```
+
+There is a positive correlation between distance, calories burned, and daily steps. This means that as the number of daily steps taken increases, both the distance traveled and the number of calories burned also increase.
+
+## Steps based on activity
+
+```{r}
+p7<- d_activity %>% 
+  group_by(type) %>% 
+  summarize(avg_steps = mean(totalsteps)) %>% 
+  arrange(avg_steps)
+
+ggplot(p7, aes(type, avg_steps)) + geom_col() +  theme_minimal() + labs(y = "Average Steps", title = "Steps based on activity", x = "") + geom_text(aes(label = format(avg_steps, format = "%d")), vjust = -0.5)
+```
+The graph above shows us the average number of steps for each type of activity. 
+
+## Activity types performed by users.
+
+```{r}
+p8 <- d_activity %>% 
+  group_by(type) %>% 
+  summarize(count_users = length(unique(id)))
+p8
+
+ggplot(p8, aes(type, count_users)) + geom_col() + theme_minimal() + labs(y = "Users", title = "Activity types performed by users.", x = "") + geom_text(aes(label = count_users), vjust = -0.5)
+```
+
+All the individuals in the data set have sedentary activities. Meanwhile, only 21 of them exercise regularly. Therefore, most of them are willing to exercise and be mindful of their health and activity levels.
+
+## Daily calories and intensity
+
+```{r}
+p3 <- ggplot(d_activity, aes(veryactiveminutes, calories)) + geom_point() + labs(x = "Highly Active [min]", y = "Calories", title = "Highly active minutes, Active minutes, Fairly Active minutes and Sedentary minutes vs Calories") + theme_minimal() + geom_smooth(method = "lm")
+
+
+p4 <- ggplot(d_activity, aes(fairlyactiveminutes, calories)) + geom_point() + labs(x = "Active [min]", y = "", title = " ") + theme_minimal() + theme(axis.text.y = element_blank()) + geom_smooth(method = "lm")
+
+p5 <- ggplot(d_activity, aes(lightlyactiveminutes, calories)) + geom_point() + labs(x = "Fairly Active [min]", y = "", title = " ") + theme_minimal() + theme(axis.text.y = element_blank()) + geom_smooth(method = "lm")
+
+p6 <- ggplot(d_activity, aes(sedentaryminutes, calories)) + geom_point() + labs(x = "Sedentary [min]", y = "", title = " ") + theme_minimal() + theme(axis.text.y = element_blank()) + geom_smooth(method = "lm")
+
+plot_grid(p3, p4, p5, p6, ncol = 4)  
+```
+
+
+There is a positive correlation between the type of activity and the calories burned, meaning that the more highly active you are, the more calories you burn, and vice versa. According to the data set results, 20 minutes of highly intense activity burns the same amount of calories as 8 hours of sedentary activity. 
+
+## Calories burned according to day of the week.
+
+
+```{r}
+d_activity %>% 
+  group_by(day_of_week) %>% 
+  summarize(avg_calories = mean(calories)) %>% 
+  ggplot(aes(day_of_week, avg_calories)) + geom_col() +  theme_minimal() + labs(y = "Average Calories", title = "Calories burned according to day of the week.", x = "") + geom_text(aes(label = format(avg_calories, format = "%d")), vjust = -0.5)
+```
+
+
+The calories burned remain constant throughout the week. However, certain days, such as Sunday and Thursday, involve less physical activity.
+
+
+## Sleep time
+
+```{r}
+q1 <- d_sleep %>% 
+  group_by(type) %>% 
+  summarize(avg_sleep = mean(totalminutesasleep), users = length(unique(id)))
+q1
+
+ggplot(q1, aes(type, users, fill = avg_sleep)) + geom_col() + theme_minimal() + labs(y = "Users", title = "How many users sleep well or poorly", x = "", fill = "Asleep minutes") + geom_text(aes(label = users), vjust = -0.5)
+```
+
+
+The graph above shows that most users sleep well, although many of them had unhealthy sleep on some days during the period of data collection.
+
+## Relationship between sleep and calories.
+
+
+```{r}
+# se unen ambos archivos segun 'id' y 'date' 
+q2 <- merge(d_activity, d_sleep, by = c('id', 'date')) 
+
+# se hace un summary de las columnas que se va a graficar
+q3 <- q2 %>% 
+  select(calories, totalminutesasleep, type.y) %>% 
+  group_by(type.y) %>% 
+  summarize(mean(calories), max(calories), min(calories), median(calories), quantile(calories, probs = 0.25), quantile(calories, probs = 0.75))
+q3
+
+# se grafica la correlacion entre calorias y sueno
+ggplot(q2, aes(totalminutesasleep, calories,  color = type.y)) + geom_point() + geom_smooth(method = "lm") + facet_wrap(~type.y) + labs(x = "Asleep minutes", y = "Calories", title = "Asleep minutes vs Calories burned", color = "Quality of sleep") + theme_minimal()
+
+```
+
+This visualization shows us a positive correlation between calories and sleep, which means that if you sleep for more than 8 hours or less than 5 hours, you burn fewer calories, while if you sleep between 5 and 8 hours, you tend to burn more calories. This means that sleep quality has a positive impact on your physical activity and, therefore, on your health.
+
+
+
+<!-- Archivos guardados para hacer dashboard
+```{r}
+# guardar archivo 
+write_csv(d_activity, "processed_data/dashboard_activity.csv")
+write_csv(d_sleep, "processed_data/dashboard_sleep.csv")
+```
+-->
+
+
+# Act
+
+## Conclusion.
+
+Most of the people within the dataset who use Bellabeat products lead sedentary lives, but during the data collection period, it is also shown that they engage in activities to take care of their health, although this is not a daily habit for everyone. This causes their physical activity based on the number of steps and calories burned to be only slightly above that of a completely sedentary person. Therefore, it is necessary to add highly active physical activity for at least 30 minutes to achieve the goal proposed by the WHO of 3000 daily calories burned.
+
+However, according to the data, it is also important to focus on the amount of sleep. Sleeping more than necessary also has a negative impact on our physical activity just as sleeping too little does. It is important to get enough sleep, between 5 to 8 hours per day for adults, to improve physical activity and therefore, overall health.
+
+Finally, the missing data from the heart rate and weight files are crucial for providing a deeper analysis of the products offered by Bellabeat, yet they do not contain enough data. Therefore, it is important to encourage the use of the application and its products.
+
+
+## Recommendations based on your analysis.
+
+* Weekly contests that allow users to create a more active community and become more familiar with Bellabeat.
+* Contests based on physical activity and getting enough sleep.
+* The Bellabeat app product can offer recognition to its users for meeting goals by rewarding them with discounts on their other products for their usage.
+* Recommending a home workout routine to help achieve fitness goals.
+* Recommending activities to improve sleep quality.
+* Recommending activities to eat healthily.
+* Newsletter providing information on how much to sleep, how much to exercise, and other tips.
+* Simplifying the information entry process for users.
+
+
+Contact information: https://www.linkedin.com/in/guinansacaw 
+
+![](images/bellabeat_screenshot.png)
+
+ 
+
+<!-- Algunas funciones de las clases de COursera
+
+> recordar: rename_with(<dataframe>, tolower) 
+
+> clean_names(<dataframe>) se asegura que solo existan chr, num, underscores en los nombres  y elimina caracteres especiales como espacios en blanco, signos de puntuación, guiones y otros caracteres no alfanuméricos.
+
+> librerias: here, janitor, skimr
+
+> drop_na() elimina filas con valores faltantes, y puede usar argumentos
+
+> separate(<df>, <column>, into=c('first_name', 'last_name'), sep=' ') es lo opuesto a concatenar
+
+> unite(<df>, 'column', first_name, last_name, sep=' ')
+
+> summarize(mean(x), sd(x), cor(x,y))
+
+> SimDesing es el paquete para la funcion bias() la cual compara los resultados 
+
+> trimws() para eliminar espacios enb blanco
+
+> as.factor() para asegurarse que las columnas categoricas esten en el formato correcto
+
+-->
