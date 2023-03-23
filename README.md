@@ -22,6 +22,15 @@ and you can also view the infographic created in [Tableau](https://public.tablea
 
 ## Some insights
 
-![Figure 1](https://github.com/guinansacaw/bellabeat_case_study/blob/main/bellabeat_files/figure-gfm/unnamed-chunk-14-1.png)
+![Distance and Calories vs Daily Steps](https://github.com/guinansacaw/bellabeat_case_study/blob/main/bellabeat_files/figure-gfm/unnamed-chunk-14-1.png)
+There is a positive correlation between distance, calories burned, and daily steps. This means that as the number of daily steps taken increases, both the distance traveled and the number of calories burned also increase.
 
-All the individuals in the data set have sedentary activities. Meanwhile, only 21 of them exercise regularly. Therefore, most of them are willing to exercise and be mindful of their health and activity levels
+![Steps based on activity](https://github.com/guinansacaw/bellabeat_case_study/blob/main/bellabeat_files/figure-gfm/unnamed-chunk-15-1.png)
+The graph above shows us the average number of steps for each type of activity.
+
+
+
+
+All the individuals in the data set have sedentary activities. Meanwhile, only 21 of them exercise regularly. Therefore, most of them are willing to exercise and be mindful of their health and activity levels.
+
+
