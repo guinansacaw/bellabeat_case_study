@@ -22,6 +22,6 @@ and you can also view the infographic created in [Tableau](https://public.tablea
 
 ## Some insights
 
-![Fig.1](../bellabeat_files/figure-gfm/unnamed-chunk-15-1.png)
+![Figure 1](~/R_documents/case studies/bellabeat_case_study/bellabeat_files/figure-gfmg)
 
 All the individuals in the data set have sedentary activities. Meanwhile, only 21 of them exercise regularly. Therefore, most of them are willing to exercise and be mindful of their health and activity levels
