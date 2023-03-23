@@ -19,18 +19,4 @@ The data used in the anlysis comes from [FitBit Fitness Tracker Data](https://ww
 You can find all the documentation related to the code in the following [markdown](bellabeat_report.Rmd) file. And the reports are publish [here](bellabeat_report.md) and on [RPubs](https://rpubs.com/guinansacaw/1013984). Additionally, there is a presentation with insights available on [Google Slides](https://docs.google.com/presentation/d/1vdcUTCd7qcOvdEWpfPMgyerp5nyOmCfNLvzqaMttIhU/edit?usp=sharing), 
 and you can also view the infographic created in [Tableau](https://public.tableau.com/views/bellabeat_16787484688480/Dashboard1?:language=en-US&:display_count=n&:origin=viz_share_link). The templates used to create the presentation and infographic can be downloaded from [here](images).
 
-
-## Some insights
-
-![Distance and Calories vs Daily Steps](https://github.com/guinansacaw/bellabeat_case_study/blob/main/bellabeat_files/figure-gfm/unnamed-chunk-14-1.png)
-There is a positive correlation between distance, calories burned, and daily steps. This means that as the number of daily steps taken increases, both the distance traveled and the number of calories burned also increase.
-
-![Steps based on activity](https://github.com/guinansacaw/bellabeat_case_study/blob/main/bellabeat_files/figure-gfm/unnamed-chunk-15-1.png)
-The graph above shows us the average number of steps for each type of activity.
-
-
-
-
-All the individuals in the data set have sedentary activities. Meanwhile, only 21 of them exercise regularly. Therefore, most of them are willing to exercise and be mindful of their health and activity levels.
-
-
+![](https://github.com/guinansacaw/bellabeat_case_study/blob/main/images/bellabeat_v2.png)
